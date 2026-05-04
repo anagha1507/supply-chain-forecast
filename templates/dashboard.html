@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Supply Chain Forecasting</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 15px 30px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .navbar h1 { font-size: 1.5em; }
+        
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 20px;
+            border: 2px solid white;
+            border-radius: 20px;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+        
+        .card img {
+            width: 100%;
+            border-radius: 10px;
+        }
+        
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .metric-row:last-child { border-bottom: none; }
+        
+        .metric-label { color: #666; }
+        .metric-value { font-weight: bold; color: #333; }
+        
+        .model-comparison {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .model-stat {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        .model-stat.lstm { background: #fff5f5; }
+        .model-stat.xgb { background: #f0fff4; }
+        .model-stat.tft { background: #fff9f0; }
+        
+        .model-stat h3 { margin-bottom: 10px; }
+        .model-stat .score { font-size: 1.5em; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>📊 Supply Chain Forecasting Dashboard</h1>
+        <a href="/">← Back to Forecast</a>
+    </div>
+    
+    <div class="dashboard">
+        <!-- Model Performance Card -->
+        <div class="card" style="grid-column: span 2;">
+            <h2>🏆 Model Performance Comparison</h2>
+            <div class="model-comparison">
+                <div class="model-stat lstm">
+                    <h3>🔴 LSTM</h3>
+                    <div class="score">9.64%</div>
+                    <p>MAPE Score</p>
+                </div>
+                <div class="model-stat xgb">
+                    <h3>🟢 XGBoost</h3>
+                    <div class="score">--</div>
+                    <p>MAPE Score</p>
+                </div>
+                <div class="model-stat tft">
+                    <h3>🟠 TFT</h3>
+                    <div class="score">--</div>
+                    <p>MAPE Score</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- LSTM Training History -->
+        <div class="card">
+            <h2>📈 LSTM Training History</h2>
+            <img src="/static/lstm_training_history.png" alt="LSTM Training" 
+                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22><rect fill=%22%23f0f0f0%22 width=%22300%22 height=%22200%22/><text fill=%22%23999%22 x=%22150%22 y=%22100%22 text-anchor=%22middle%22>Plot Not Available</text></svg>'">
+        </div>
+        
+        <!-- LSTM Predictions -->
+        <div class="card">
+            <h2>🎯 LSTM Predictions vs Actual</h2>
+            <img src="/static/lstm_predictions.png" alt="LSTM Predictions"
+                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22><rect fill=%22%23f0f0f0%22 width=%22300%22 height=%22200%22/><text fill=%22%23999%22 x=%22150%22 y=%22100%22 text-anchor=%22middle%22>Plot Not Available</text></svg>'">
+        </div>
+        
+        <!-- XGBoost Feature Importance -->
+        <div class="card">
+            <h2>🔍 XGBoost Feature Importance</h2>
+            <img src="/static/xgboost_feature_importance.png" alt="Feature Importance"
+                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22><rect fill=%22%23f0f0f0%22 width=%22300%22 height=%22200%22/><text fill=%22%23999%22 x=%22150%22 y=%22100%22 text-anchor=%22middle%22>Plot Not Available</text></svg>'">
+        </div>
+        
+        <!-- SHAP Summary -->
+        <div class="card">
+            <h2>🧠 SHAP Explainability</h2>
+            <img src="/static/shap_summary.png" alt="SHAP Summary"
+                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22><rect fill=%22%23f0f0f0%22 width=%22300%22 height=%22200%22/><text fill=%22%23999%22 x=%22150%22 y=%22100%22 text-anchor=%22middle%22>Plot Not Available</text></svg>'">
+        </div>
+        
+        <!-- TFT Attention -->
+        <div class="card">
+            <h2>👁️ TFT Temporal Attention</h2>
+            <img src="/static/tft_attention.png" alt="TFT Attention"
+                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22><rect fill=%22%23f0f0f0%22 width=%22300%22 height=%22200%22/><text fill=%22%23999%22 x=%22150%22 y=%22100%22 text-anchor=%22middle%22>Plot Not Available</text></svg>'">
+        </div>
+        
+        <!-- TFT Predictions -->
+        <div class="card">
+            <h2>🤖 TFT Predictions vs Actual</h2>
+            <img src="/static/tft_predictions.png" alt="TFT Predictions"
+                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22><rect fill=%22%23f0f0f0%22 width=%22300%22 height=%22200%22/><text fill=%22%23999%22 x=%22150%22 y=%22100%22 text-anchor=%22middle%22>Plot Not Available</text></svg>'">
+        </div>
+        
+        <!-- System Info -->
+        <div class="card">
+            <h2>ℹ️ System Info</h2>
+            <div class="metric-row">
+                <span class="metric-label">Models Trained</span>
+                <span class="metric-value">3 (LSTM + XGBoost + TFT)</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Data Records</span>
+                <span class="metric-value">18,250</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Features Used</span>
+                <span class="metric-value">30+ engineered features</span>
+            </div>
+            <div class="metric-row">
+                <span class="metric-label">Forecast Horizon</span>
+                <span class="metric-value">1-30 days</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
