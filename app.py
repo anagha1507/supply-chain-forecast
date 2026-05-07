@@ -83,11 +83,6 @@ def index():
     """Home page"""
     return render_template('index.html')
 
-@app.route('/dashboard')
-def dashboard():
-    """Dashboard page"""
-    return render_template('dashboard.html')
-
 @app.route('/api/forecast', methods=['POST'])
 def forecast():
     """API endpoint for demand forecasting"""
@@ -107,20 +102,23 @@ def forecast():
         
         if model_type == 'lstm' and lstm_model:
             future_preds = lstm_model.predict_future(historical_data, n_steps=forecast_days)
-            predictions = future_preds.tolist()
+            predictions = [int(round(p)) for p in future_preds.tolist()]
         elif model_type == 'xgboost' and xgb_model:
-            # For XGBoost, use the last known features
             future_preds = predict_xgboost_future(historical_data, forecast_days)
-            predictions = future_preds.tolist()
+            predictions = [int(round(p)) for p in future_preds.tolist()]
         elif model_type == 'tft' and tft_model:
             future_preds = tft_model.predict_future(historical_data, n_steps=forecast_days)
-            predictions = future_preds.tolist()
+            predictions = [int(round(p)) for p in future_preds.tolist()]
         elif model_type == 'ensemble':
             # Ensemble prediction (average of all models)
-            preds_lstm = lstm_model.predict_future(historical_data, n_steps=forecast_days)
-            preds_xgb = predict_xgboost_future(historical_data, forecast_days)
-            preds_tft = tft_model.predict_future(historical_data, n_steps=forecast_days)
-            predictions = np.mean([preds_lstm, preds_xgb, preds_tft], axis=0).tolist()
+            if lstm_model and tft_model:
+                preds_lstm = lstm_model.predict_future(historical_data, n_steps=forecast_days)
+                preds_xgb = predict_xgboost_future(historical_data, forecast_days)
+                preds_tft = tft_model.predict_future(historical_data, n_steps=forecast_days)
+                predictions = np.mean([preds_lstm, preds_xgb, preds_tft], axis=0)
+                predictions = [int(round(p)) for p in predictions.tolist()]
+            else:
+                return jsonify({'error': 'All models not available for ensemble'}), 400
             model_used = 'Ensemble (LSTM + XGBoost + TFT)'
         else:
             return jsonify({'error': 'Model not available'}), 400
@@ -129,9 +127,9 @@ def forecast():
         dates = [(datetime.now() + timedelta(days=i+1)).strftime('%Y-%m-%d') 
                  for i in range(forecast_days)]
         
-        # Calculate total forecasted demand
-        total_demand = sum(predictions)
-        avg_demand = total_demand / forecast_days
+        # Calculate total forecasted demand (whole numbers)
+        total_demand = int(sum(predictions))
+        avg_demand = int(total_demand / forecast_days)
         
         return jsonify({
             'success': True,
@@ -141,8 +139,8 @@ def forecast():
             'forecast_days': forecast_days,
             'predictions': predictions,
             'dates': dates,
-            'total_demand': round(total_demand, 2),
-            'avg_daily_demand': round(avg_demand, 2)
+            'total_demand': total_demand,
+            'avg_daily_demand': avg_demand
         })
         
     except Exception as e:
@@ -160,73 +158,18 @@ def get_metrics(model_type):
         return jsonify(model_metrics[model_type])
     return jsonify({'error': 'Model not found'}), 404
 
-@app.route('/api/generate_plot', methods=['POST'])
-def generate_plot():
-    """Generate and return plots"""
-    try:
-        data = request.get_json()
-        plot_type = data.get('plot_type', 'forecast')
-        
-        if plot_type == 'forecast':
-            # Generate forecast plot
-            product_id = data.get('product_id', 1)
-            store_id = data.get('store_id', 1)
-            forecast_days = data.get('forecast_days', 7)
-            
-            historical_data = generate_sample_sequence(product_id, store_id)
-            
-            fig, ax = plt.subplots(figsize=(10, 5))
-            
-            # Plot historical data
-            hist_dates = [(datetime.now() - timedelta(days=30-i)).strftime('%m/%d') 
-                         for i in range(30)]
-            ax.plot(hist_dates, historical_data, 'b-', label='Historical', linewidth=2)
-            
-            # Plot predictions for each model
-            colors = {'lstm': 'red', 'xgboost': 'green', 'tft': 'orange'}
-            future_dates = [(datetime.now() + timedelta(days=i+1)).strftime('%m/%d') 
-                          for i in range(forecast_days)]
-            
-            for model_type, color in colors.items():
-                if model_type == 'lstm' and lstm_model:
-                    preds = lstm_model.predict_future(historical_data, n_steps=forecast_days)
-                elif model_type == 'xgboost' and xgb_model:
-                    preds = predict_xgboost_future(historical_data, forecast_days)
-                elif model_type == 'tft' and tft_model:
-                    preds = tft_model.predict_future(historical_data, n_steps=forecast_days)
-                else:
-                    continue
-                
-                ax.plot(future_dates, preds, '--', color=color, 
-                       label=f'{model_type.upper()} Forecast', linewidth=2, marker='o')
-            
-            ax.set_xlabel('Date')
-            ax.set_ylabel('Demand')
-            ax.set_title('Demand Forecast Comparison')
-            ax.legend()
-            ax.grid(True, alpha=0.3)
-            
-            img_base64 = fig_to_base64(fig)
-            plt.close(fig)
-            
-            return jsonify({'success': True, 'plot': img_base64})
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
 def generate_sample_sequence(product_id=1, store_id=1):
     """Generate sample historical sequence for prediction"""
-    # Create a realistic looking sequence
-    np.random.seed(product_id * 100 + store_id)
+    seed = product_id * 1000 + store_id * 100 + int(datetime.now().timestamp()) % 1000
+    np.random.seed(seed)
     
-    base_demand = 100 + (product_id * 20) + (store_id * 10)
+    base_demand = 80 + (product_id * 25) + (store_id * 12)
     sequence = []
     
     for i in range(30):
-        # Add trend, seasonality, and noise
-        trend = i * 0.5
-        seasonality = 15 * np.sin(2 * np.pi * i / 7)
-        noise = np.random.normal(0, base_demand * 0.05)
+        trend = i * (0.3 + product_id * 0.1)
+        seasonality = (10 + store_id * 3) * np.sin(2 * np.pi * i / 7)
+        noise = np.random.normal(0, base_demand * 0.08)
         
         demand = base_demand + trend + seasonality + noise
         sequence.append(max(0, demand))
@@ -234,16 +177,14 @@ def generate_sample_sequence(product_id=1, store_id=1):
     return np.array(sequence)
 
 def predict_xgboost_future(historical_sequence, n_steps):
-    """Make future predictions using XGBoost (uses last values as approximation)"""
-    # Since XGBoost uses tabular features, we approximate with trend continuation
+    """Make future predictions using XGBoost"""
     predictions = []
     last_values = historical_sequence[-7:]
     
     for i in range(n_steps):
-        # Simple trend-based prediction
         trend = np.mean(np.diff(last_values)) if len(last_values) > 1 else 0
         next_pred = last_values[-1] + trend + np.random.normal(0, 5)
-        predictions.append(max(0, next_pred))
+        predictions.append(max(0, int(round(next_pred))))
         last_values = np.append(last_values[1:], next_pred)
     
     return np.array(predictions)
